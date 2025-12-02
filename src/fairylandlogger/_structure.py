@@ -15,7 +15,8 @@ import yaml
 
 from ._enums import LogLevelEnum, EncodingEnum
 
-_DEFAULT_LOG_PATTERN = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | P:{process} T:{thread} | {message}"
+# File logger default pattern
+_DEFAULT_LOG_PATTERN = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | P:{process} T:{thread} - {message}"
 
 
 @dataclass(frozen=True)
@@ -55,7 +56,9 @@ class LoggerConfigStructure:
     @staticmethod
     def from_yaml(path: t.Union[str, Path]) -> "LoggerConfigStructure":
         with open(path, "r", encoding=EncodingEnum.UTF8) as stream:
-            data = yaml.safe_load(stream) or {}
+            content = yaml.safe_load(stream) or {}
+
+        data = content.get("fairyland", {}).get("logger", {})
 
         return LoggerConfigStructure(
             level=LogLevelEnum(data.get("level", "INFO")),

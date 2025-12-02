@@ -71,4 +71,5 @@ class LogManager:
 
     @classmethod
     def get_registry(cls):
-        return LoggerRegistry.instance()._appenders
+        for appender in LoggerRegistry.get_instance()._appenders:
+            print(appender)

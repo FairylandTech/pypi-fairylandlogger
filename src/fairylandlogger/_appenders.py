@@ -14,42 +14,21 @@ from pathlib import Path
 from loguru import logger as _loguru_logger
 
 from ._enums import LogLevelEnum, EncodingEnum
-from ._structure import LoggerRecordStructure
 
 
 class AbstractLoggerAppender(abc.ABC):
 
     @abc.abstractmethod
-    def add_sink(self):
-        pass
-
-    @abc.abstractmethod
-    def emit(self, record: LoggerRecordStructure):
-        pass
+    def add_sink(self): ...
 
 
-class EmitLoggerMixin:
-
-    @staticmethod
-    def _emit_by_level(level: t.Optional[t.Union[str, LogLevelEnum]], msg: str) -> None:
-        if level == LogLevelEnum.TRACE:
-            _loguru_logger.opt(depth=1).trace(msg)
-        elif level == LogLevelEnum.DEBUG:
-            _loguru_logger.opt(depth=1).debug(msg)
-        elif level == LogLevelEnum.INFO:
-            _loguru_logger.opt(depth=1).info(msg)
-        elif level == LogLevelEnum.WARNING:
-            _loguru_logger.opt(depth=1).warning(msg)
-        elif level == LogLevelEnum.ERROR:
-            _loguru_logger.opt(depth=1).error(msg)
-        elif level == LogLevelEnum.SUCCESS:
-            _loguru_logger.opt(depth=1).success(msg)
-        else:
-            _loguru_logger.opt(depth=1).critical(msg)
-
-
-class ConsoleLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
-    _DEFAULT_PATTERN = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan> | <level>{message}</level>"
+class ConsoleLoggerAppender(AbstractLoggerAppender):
+    _DEFAULT_PATTERN = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    )
 
     def __init__(self, level: t.Union[str, LogLevelEnum] = LogLevelEnum.INFO, pattern: t.Optional[str] = None):
         self._level = level
@@ -65,17 +44,15 @@ class ConsoleLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
 
     def add_sink(self):
         _loguru_logger.add(
-            sink=lambda x: print(x),
+            sink=lambda x: print(x, end=""),
             level=self.level,
             format=self.pattern,
             colorize=True,
         )
 
-    def emit(self, record: LoggerRecordStructure):
-        self._emit_by_level(record.level, f"[{record.name}] {record.message}")
 
-
-class FileLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
+class FileLoggerAppender(AbstractLoggerAppender):
+    _DEFAULT_PATTERN = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | P:{process} T:{thread} - {message}"
 
     def __init__(
             self,
@@ -84,12 +61,14 @@ class FileLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
             retention: str = "180 days",
             rotation: str = "5 MB",
             encoding: t.Union[str, EncodingEnum] = EncodingEnum.UTF8,
+            pattern: t.Optional[str] = None,
     ):
         self.path = path
         self._level = level
         self.rotation = rotation
         self.retention = retention
         self._encoding = encoding
+        self.pattern = pattern if pattern else self._DEFAULT_PATTERN
 
     @property
     def level(self):
@@ -114,16 +93,14 @@ class FileLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
             retention=self.retention,
             encoding=self.encoding,
             level=self.level,
+            format=self.pattern,
             enqueue=True,
             backtrace=True,
             diagnose=True,
         )
 
-    def emit(self, record: LoggerRecordStructure):
-        self._emit_by_level(record.level, f"[{record.name}] {record.message}")
 
-
-class JSONLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
+class JSONLoggerAppender(AbstractLoggerAppender):
 
     def __init__(
             self,
@@ -132,12 +109,14 @@ class JSONLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
             retention: str = "180 days",
             rotation: str = "5 MB",
             encoding: t.Union[str, EncodingEnum] = EncodingEnum.UTF8,
+            pattern: t.Optional[str] = None,
     ):
         self.path = path
         self._level = level
         self.rotation = rotation
         self.retention = retention
         self._encoding = encoding
+        self.__pattern = pattern  # Ignore this parameter in JSON mode
 
     @property
     def level(self):
@@ -167,6 +146,3 @@ class JSONLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
             diagnose=True,
             serialize=True,
         )
-
-    def emit(self, record: LoggerRecordStructure):
-        self._emit_by_level(record.level, f"[{record.name}] {record.message}")

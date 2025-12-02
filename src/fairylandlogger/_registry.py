@@ -64,29 +64,47 @@ class LoggerRegistry:
             self._level = config.level
 
             if config.console:
-                console = ConsoleLoggerAppender(
-                    level=self._level,
-                    pattern=config.pattern if not config.json else None,
-                )
+                console = ConsoleLoggerAppender(level=self._level)
                 console.add_sink()
+                self._appenders.append(console)
             if config.file:
                 path = config.dirname
                 os.makedirs(path, exist_ok=True)
                 if isinstance(path, Path):
-                    path.joinpath(config.filename)
+                    path = path.joinpath(config.filename)
                 elif isinstance(path, str):
                     path = os.path.join(path, config.filename)
                 else:
                     raise TypeError("dirname must be str or Path")
 
-                if config.json:
-                    appender = JSONLoggerAppender
-                else:
-                    appender = FileLoggerAppender
+                # Add regular file appender
+                file_appender = FileLoggerAppender(
+                    path=path,
+                    level=self._level,
+                    rotation=config.rotation,
+                    retention=config.retention,
+                    encoding=config.encoding,
+                    pattern=config.pattern,
+                )
+                file_appender.add_sink()
+                self._appenders.append(file_appender)
 
-                log_appender = appender(path=path, level=self._level, rotation=config.rotation, retention=config.retention, encoding=config.encoding)
-                log_appender.add_sink()
-                self._appenders.append(log_appender)
+                if config.json:
+                    json_path = str(path)
+                    if json_path.endswith('.log'):
+                        json_path = json_path[:-4] + "-json" + '.log'
+                    else:
+                        json_path = json_path + '.json'
+
+                    json_appender = JSONLoggerAppender(
+                        path=json_path,
+                        level=self._level,
+                        rotation=config.rotation,
+                        retention=config.retention,
+                        encoding=config.encoding,
+                    )
+                    json_appender.add_sink()
+                    self._appenders.append(json_appender)
 
             self._configured = True
 
@@ -118,20 +136,21 @@ class LoggerRegistry:
         return best[1]
 
     def route(self, record: LoggerRecordStructure) -> None:
+        depth = 3
         if not self._should_log(record.level, self._effective_level(record.name)):
             return
         msg = f"[{record.name}] {record.message}"
         if record.level == LogLevelEnum.TRACE:
-            _loguru_logger.opt(depth=1).trace(msg)
+            _loguru_logger.opt(depth=depth).trace(msg)
         elif record.level == LogLevelEnum.DEBUG:
-            _loguru_logger.opt(depth=1).debug(msg)
+            _loguru_logger.opt(depth=depth).debug(msg)
         elif record.level == LogLevelEnum.INFO:
-            _loguru_logger.opt(depth=1).info(msg)
+            _loguru_logger.opt(depth=depth).info(msg)
         elif record.level == LogLevelEnum.WARNING:
-            _loguru_logger.opt(depth=1).warning(msg)
+            _loguru_logger.opt(depth=depth).warning(msg)
         elif record.level == LogLevelEnum.ERROR:
-            _loguru_logger.opt(depth=1).error(msg)
+            _loguru_logger.opt(depth=depth).error(msg)
         elif record.level == LogLevelEnum.SUCCESS:
-            _loguru_logger.opt(depth=1).success(msg)
+            _loguru_logger.opt(depth=depth).success(msg)
         else:
-            _loguru_logger.opt(depth=1).critical(msg)
+            _loguru_logger.opt(depth=depth).critical(msg)

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=./fairylandlogger-application.schema.json
+# yaml-language-server: $schema=./application.schema.json
 # @software: PyCharm
 # @author: Lionel Johnson
 # @contact: https://fairy.host

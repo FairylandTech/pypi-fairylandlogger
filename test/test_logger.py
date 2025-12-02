@@ -18,13 +18,13 @@ class TestFairylandLogger(unittest.TestCase):
     def setUp(self):
         """Reset the LogManager before each test."""
         LogManager.reset()
-        print(__banner__)
+        # print(__banner__)
 
     def tearDown(self):
         """Reset the LogManager after each test to ensure clean state."""
         LogManager.reset()
 
-    def test_logger(self):
+    def test_logog(self):
         # config = LoggerConfigStructure(
         #     level=LogLevelEnum.DEBUG,
         #     file=True,
@@ -38,6 +38,15 @@ class TestFairylandLogger(unittest.TestCase):
 
         LogManager.configure(config)
         logger = LogManager.get_logger(__name__)
+        print(LogManager.get_registry())
+
+        class A:
+
+            def __init__(self):
+                logger.info("Info message from A")
+
+        A()
+
         logger1 = LogManager.get_logger("another_logger")
 
         logger.info("Info message")

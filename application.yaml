@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=./fairylandlogger-application.schema.json
 # @software: PyCharm
 # @author: Lionel Johnson
 # @contact: https://fairy.host
@@ -11,6 +12,6 @@ fairyland:
     file: true
     dirname: logs
     filename: fairylandlogger.log
-    rotation: 5MB
+    rotation: 10 MB
     retention: 180 days
-    json: false
+    json: true

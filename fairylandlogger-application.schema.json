@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fairyland Logger Configuration",
+  "description": "Configuration schema for Fairyland Logger",
+  "type": "object",
+  "properties": {
+    "fairyland": {
+      "type": "object",
+      "description": "Fairyland application configuration",
+      "properties": {
+        "logger": {
+          "type": "object",
+          "description": "Logger configuration settings",
+          "properties": {
+            "level": {
+              "type": "string",
+              "description": "Log level threshold",
+              "enum": [
+                "TRACE",
+                "DEBUG",
+                "INFO",
+                "SUCCESS",
+                "WARNING",
+                "ERROR",
+                "CRITICAL"
+              ],
+              "default": "INFO"
+            },
+            "console": {
+              "type": "boolean",
+              "description": "Enable console output",
+              "default": true
+            },
+            "file": {
+              "type": "boolean",
+              "description": "Enable file output",
+              "default": false
+            },
+            "dirname": {
+              "type": "string",
+              "description": "Directory path for log files",
+              "default": "logs"
+            },
+            "filename": {
+              "type": "string",
+              "description": "Log file name",
+              "default": "service.log"
+            },
+            "rotation": {
+              "type": "string",
+              "description": "Log file rotation size (e.g., '5 MB', '10 MB', '100 KB')",
+              "default": "5 MB",
+              "pattern": "^\\d+\\s*(B|KB|MB|GB)$"
+            },
+            "retention": {
+              "type": "string",
+              "description": "Log file retention period (e.g., '7 days', '180 days', '1 week')",
+              "default": "180 days",
+              "pattern": "^\\d+\\s*(days?|weeks?|months?|years?)$"
+            },
+            "pattern": {
+              "type": "string",
+              "description": "Log message pattern format",
+              "default": "\"{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | P:{process} T:{thread} - {message}\""
+            },
+            "json": {
+              "type": "boolean",
+              "description": "Enable JSON format output",
+              "default": false
+            },
+            "encoding": {
+              "type": "string",
+              "description": "File encoding",
+              "enum": [
+                "UTF-8",
+                "GBK",
+                "GB2312",
+                "GB18030"
+              ],
+              "default": "UTF-8"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}
+

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=./application.schema.json
+# yaml-language-server: $schema=https://gist.githubusercontent.com/FairylandTech/f52daac2055982c28b9fdb4189bb7097/raw/4dc771d3f9038d817f88bdbb02bfd62612ca1bdf/fairylandlogger-config.schema.json
 # @software: PyCharm
 # @author: Lionel Johnson
 # @contact: https://fairy.host

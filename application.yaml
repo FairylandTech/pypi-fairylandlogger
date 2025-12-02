@@ -1,0 +1,16 @@
+# @software: PyCharm
+# @author: Lionel Johnson
+# @contact: https://fairy.host
+# @organization: https://github.com/FairylandFuture
+# @datetime: 2025-12-02 11:57:31 UTC+08:00
+---
+fairyland:
+  logger:
+    level: DEBUG
+    console: true
+    file: true
+    dirname: logs
+    filename: fairylandlogger.log
+    rotation: 5MB
+    retention: 180 days
+    json: false

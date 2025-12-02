@@ -71,4 +71,4 @@ class LogManager:
 
     @classmethod
     def get_registry(cls):
-        return LoggerRegistry.instance()._appenders
+        return LoggerRegistry._instance()._appenders

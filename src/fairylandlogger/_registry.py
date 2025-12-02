@@ -118,20 +118,21 @@ class LoggerRegistry:
         return best[1]
 
     def route(self, record: LoggerRecordStructure) -> None:
+        depth = 3
         if not self._should_log(record.level, self._effective_level(record.name)):
             return
         msg = f"[{record.name}] {record.message}"
         if record.level == LogLevelEnum.TRACE:
-            _loguru_logger.opt(depth=1).trace(msg)
+            _loguru_logger.opt(depth=depth).trace(msg)
         elif record.level == LogLevelEnum.DEBUG:
-            _loguru_logger.opt(depth=1).debug(msg)
+            _loguru_logger.opt(depth=depth).debug(msg)
         elif record.level == LogLevelEnum.INFO:
-            _loguru_logger.opt(depth=1).info(msg)
+            _loguru_logger.opt(depth=depth).info(msg)
         elif record.level == LogLevelEnum.WARNING:
-            _loguru_logger.opt(depth=1).warning(msg)
+            _loguru_logger.opt(depth=depth).warning(msg)
         elif record.level == LogLevelEnum.ERROR:
-            _loguru_logger.opt(depth=1).error(msg)
+            _loguru_logger.opt(depth=depth).error(msg)
         elif record.level == LogLevelEnum.SUCCESS:
-            _loguru_logger.opt(depth=1).success(msg)
+            _loguru_logger.opt(depth=depth).success(msg)
         else:
-            _loguru_logger.opt(depth=1).critical(msg)
+            _loguru_logger.opt(depth=depth).critical(msg)

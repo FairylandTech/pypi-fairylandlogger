@@ -32,20 +32,21 @@ class EmitLoggerMixin:
 
     @staticmethod
     def _emit_by_level(level: t.Optional[t.Union[str, LogLevelEnum]], msg: str) -> None:
+        depth = 1
         if level == LogLevelEnum.TRACE:
-            _loguru_logger.opt(depth=1).trace(msg)
+            _loguru_logger.opt(depth=depth).trace(msg)
         elif level == LogLevelEnum.DEBUG:
-            _loguru_logger.opt(depth=1).debug(msg)
+            _loguru_logger.opt(depth=depth).debug(msg)
         elif level == LogLevelEnum.INFO:
-            _loguru_logger.opt(depth=1).info(msg)
+            _loguru_logger.opt(depth=depth).info(msg)
         elif level == LogLevelEnum.WARNING:
-            _loguru_logger.opt(depth=1).warning(msg)
+            _loguru_logger.opt(depth=depth).warning(msg)
         elif level == LogLevelEnum.ERROR:
-            _loguru_logger.opt(depth=1).error(msg)
+            _loguru_logger.opt(depth=depth).error(msg)
         elif level == LogLevelEnum.SUCCESS:
-            _loguru_logger.opt(depth=1).success(msg)
+            _loguru_logger.opt(depth=depth).success(msg)
         else:
-            _loguru_logger.opt(depth=1).critical(msg)
+            _loguru_logger.opt(depth=depth).critical(msg)
 
 
 class ConsoleLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
@@ -65,7 +66,7 @@ class ConsoleLoggerAppender(AbstractLoggerAppender, EmitLoggerMixin):
 
     def add_sink(self):
         _loguru_logger.add(
-            sink=lambda x: print(x),
+            sink=lambda x: print(x, end=""),
             level=self.level,
             format=self.pattern,
             colorize=True,

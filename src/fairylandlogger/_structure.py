@@ -55,7 +55,9 @@ class LoggerConfigStructure:
     @staticmethod
     def from_yaml(path: t.Union[str, Path]) -> "LoggerConfigStructure":
         with open(path, "r", encoding=EncodingEnum.UTF8) as stream:
-            data = yaml.safe_load(stream) or {}
+            content = yaml.safe_load(stream) or {}
+
+        data = content.get("fairyland", {}).get("logger", {})
 
         return LoggerConfigStructure(
             level=LogLevelEnum(data.get("level", "INFO")),

@@ -67,6 +67,7 @@ class LoggerRegistry:
                 console = ConsoleLoggerAppender(level=self._level)
                 console.add_sink()
                 self._appenders.append(console)
+
             if config.file:
                 path = config.dirname
                 os.makedirs(path, exist_ok=True)
@@ -112,6 +113,10 @@ class LoggerRegistry:
         if not self._configured:
             self.configure(LoggerConfigStructure())
 
+    def set_level(self, prefix: str, level: t.Union[str, LogLevelEnum]) -> None:
+        with self._lock:
+            self._levels[prefix] = level
+
     @staticmethod
     def _should_log(msg_level: t.Union[str, LogLevelEnum], eff_level: t.Union[str, LogLevelEnum]) -> bool:
         order = ["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -122,10 +127,6 @@ class LoggerRegistry:
             return order.index(msg_level) >= order.index(eff_level)
         except ValueError:
             return True
-
-    def set_level(self, prefix: str, level: t.Union[str, LogLevelEnum]) -> None:
-        with self._lock:
-            self._levels[prefix] = level
 
     def _effective_level(self, logger_name: str) -> str:
         best = ("", self._level)

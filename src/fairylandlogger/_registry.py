@@ -28,6 +28,7 @@ class LoggerRegistry:
         self._appenders: t.List[AbstractLoggerAppender] = []
         self._level: t.Union[str, LogLevelEnum] = LogLevelEnum.INFO
         self._levels: t.Dict[str, t.Union[str, LogLevelEnum]] = {}
+        self._config: t.Optional[LoggerConfigStructure] = None
 
     @property
     def level(self):
@@ -59,7 +60,7 @@ class LoggerRegistry:
                 _loguru_logger.remove()
             except Exception as error:
                 raise error
-
+            self._config = config
             self._appenders.clear()
             self._level = config.level
 
@@ -109,6 +110,33 @@ class LoggerRegistry:
 
             self._configured = True
 
+    def add_file_sink(self, name: str):
+        with self._lock:
+            if self._config and self._config.file:
+                path = self._config.dirname
+                os.makedirs(path, exist_ok=True)
+                if isinstance(path, Path):
+                    path = path.joinpath(f"{name}.log")
+                elif isinstance(path, str):
+                    path = os.path.join(path, f"{name}.log")
+                else:
+                    raise TypeError("dirname must be str or Path")
+
+                file_appender = FileLoggerAppender(
+                    path=path,
+                    level=self._level,
+                    rotation=self._config.rotation,
+                    retention=self._config.retention,
+                    encoding=self._config.encoding,
+                    pattern=self._config.pattern,
+                )
+
+                def filter_record(record):
+                    return record["extra"].get("name") == name
+
+                file_appender.add_sink(filter=filter_record)
+                self._appenders.append(file_appender)
+
     def ensure_default(self):
         if not self._configured:
             self.configure(LoggerConfigStructure())
@@ -140,18 +168,18 @@ class LoggerRegistry:
         depth = 3
         if not self._should_log(record.level, self._effective_level(record.name)):
             return
-        msg = f"[{record.name}] {record.message}"
-        if record.level == LogLevelEnum.TRACE:
-            _loguru_logger.opt(depth=depth).trace(msg)
-        elif record.level == LogLevelEnum.DEBUG:
-            _loguru_logger.opt(depth=depth).debug(msg)
-        elif record.level == LogLevelEnum.INFO:
-            _loguru_logger.opt(depth=depth).info(msg)
-        elif record.level == LogLevelEnum.WARNING:
-            _loguru_logger.opt(depth=depth).warning(msg)
-        elif record.level == LogLevelEnum.ERROR:
-            _loguru_logger.opt(depth=depth).error(msg)
-        elif record.level == LogLevelEnum.SUCCESS:
-            _loguru_logger.opt(depth=depth).success(msg)
-        else:
-            _loguru_logger.opt(depth=depth).critical(msg)
+        with _loguru_logger.contextualize(name=record.name):
+            if record.level == LogLevelEnum.TRACE:
+                _loguru_logger.opt(depth=depth).trace(record.message)
+            elif record.level == LogLevelEnum.DEBUG:
+                _loguru_logger.opt(depth=depth).debug(record.message)
+            elif record.level == LogLevelEnum.INFO:
+                _loguru_logger.opt(depth=depth).info(record.message)
+            elif record.level == LogLevelEnum.WARNING:
+                _loguru_logger.opt(depth=depth).warning(record.message)
+            elif record.level == LogLevelEnum.ERROR:
+                _loguru_logger.opt(depth=depth).error(record.message)
+            elif record.level == LogLevelEnum.SUCCESS:
+                _loguru_logger.opt(depth=depth).success(record.message)
+            else:
+                _loguru_logger.opt(depth=depth).critical(record.message)

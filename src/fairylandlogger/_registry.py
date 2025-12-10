@@ -112,7 +112,7 @@ class LoggerRegistry:
 
     def add_file_sink(self, name: str):
         with self._lock:
-            if self._config and self._config.file:
+            if self._config:
                 path = self._config.dirname
                 os.makedirs(path, exist_ok=True)
                 if isinstance(path, Path):

@@ -37,7 +37,7 @@ class TestFairylandLogger(unittest.TestCase):
         print(config)
 
         LogManager.configure(config)
-        logger = LogManager.get_logger()
+        logger = LogManager.get_logger("test_logger")
         print(LogManager.get_registry())
 
         class A:

@@ -71,7 +71,11 @@ class LoggerRegistry:
 
     def configure(self, config: LoggerConfigStructure):
         with self._lock:
-            self._reset_loguru_handlers()
+            try:
+                _loguru_logger.remove()
+            except Exception as error:
+                raise error
+            self._config = config
             self._appenders.clear()
             self._logger_file_handlers.clear()
 
@@ -79,76 +83,53 @@ class LoggerRegistry:
             self._level = config.level
 
             if config.console:
-                self._add_console_appender()
+                console = ConsoleLoggerAppender(level=self._level)
+                console.add_sink()
+                self._appenders.append(console)
 
             if config.file:
                 self._add_file_appenders(config)
 
             self._configured = True
 
-    def _reset_loguru_handlers(self):
-        try:
-            _loguru_logger.remove()
-        except Exception as error:
-            raise error
+    def add_file_sink(self, name: str):
+        with self._lock:
+            if self._config:
+                path = self._config.dirname
+                os.makedirs(path, exist_ok=True)
+                if isinstance(path, Path):
+                    path = path.joinpath(f"{name}.log")
+                elif isinstance(path, str):
+                    path = os.path.join(path, f"{name}.log")
+                else:
+                    raise TypeError("dirname must be str or Path")
 
-    def _add_console_appender(self):
-        console = ConsoleLoggerAppender(level=self._level)
-        console.add_sink()
-        self._appenders.append(console)
+                file_appender = FileLoggerAppender(
+                    path=path,
+                    level=self._level,
+                    rotation=self._config.rotation,
+                    retention=self._config.retention,
+                    encoding=self._config.encoding,
+                    pattern=self._config.pattern,
+                )
 
-    def _add_file_appenders(self, config: LoggerConfigStructure):
-        path = self._get_log_file_path(config.dirname, config.filename)
+                def filter_record(record):
+                    return record["extra"].get("name") == name
 
-        # Add standard file appender
-        file_appender = FileLoggerAppender(
-            path=path,
-            level=self._level,
-            rotation=config.rotation,
-            retention=config.retention,
-            encoding=config.encoding,
-            pattern=config.pattern,
-        )
-        file_appender.add_sink()
-        self._appenders.append(file_appender)
-
-        # Add JSON appender if enabled
-        if config.json:
-            json_path = self._get_json_log_path(path)
-            json_appender = JSONLoggerAppender(
-                path=json_path,
-                level=self._level,
-                rotation=config.rotation,
-                retention=config.retention,
-                encoding=config.encoding,
-            )
-            json_appender.add_sink()
-            self._appenders.append(json_appender)
-
-    def _get_log_file_path(self, dirname: t.Union[str, Path], filename: str) -> t.Union[str, Path]:
-        os.makedirs(dirname, exist_ok=True)
-
-        if isinstance(dirname, Path):
-            return dirname.joinpath(filename)
-        elif isinstance(dirname, str):
-            return os.path.join(dirname, filename)
-        else:
-            raise TypeError("dirname must be str or Path")
-
-    def _get_json_log_path(self, path: t.Union[str, Path]) -> str:
-        json_path = str(path)
-        if json_path.endswith('.log'):
-            json_path = json_path[:-4] + "-json" + '.log'
-        else:
-            json_path = json_path + '.json'
-        return json_path
+                file_appender.add_sink(filter=filter_record)
+                self._appenders.append(file_appender)
 
     def ensure_default(self):
         if not self._configured:
             self.configure(LoggerConfigStructure())
 
-    @classmethod
-    def _should_log(cls, msg_level: t.Union[str, LogLevelEnum], eff_level: t.Union[str, LogLevelEnum]) -> bool:
+    def set_level(self, prefix: str, level: t.Union[str, LogLevelEnum]) -> None:
+        with self._lock:
+            self._levels[prefix] = level
+
+    @staticmethod
+    def _should_log(msg_level: t.Union[str, LogLevelEnum], eff_level: t.Union[str, LogLevelEnum]) -> bool:
+        order = ["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         msg_level = msg_level.value if isinstance(msg_level, LogLevelEnum) else msg_level
         eff_level = eff_level.value if isinstance(eff_level, LogLevelEnum) else eff_level
 
@@ -156,10 +137,6 @@ class LoggerRegistry:
             return cls._LOG_LEVEL_ORDER.index(msg_level) >= cls._LOG_LEVEL_ORDER.index(eff_level)
         except ValueError:
             return True
-
-    def set_level(self, prefix: str, level: t.Union[str, LogLevelEnum]) -> None:
-        with self._lock:
-            self._levels[prefix] = level
 
     def _effective_level(self, logger_name: str) -> str:
         best = ("", self._level)

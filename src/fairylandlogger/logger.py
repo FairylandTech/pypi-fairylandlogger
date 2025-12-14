@@ -63,6 +63,7 @@ class Logger:
 
 class LogManager:
     _configured: bool = False
+    _loggers: t.Dict[str, Logger] = {}
 
     @classmethod
     def configure(cls, config: LoggerConfigStructure) -> None:
@@ -80,6 +81,7 @@ class LogManager:
     def reset(cls) -> None:
         LoggerRegistry.reset()
         cls._configured = False
+        cls._loggers.clear()
 
     @classmethod
     def set_level(cls, prefix: str, level: str) -> None:

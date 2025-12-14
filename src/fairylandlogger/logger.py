@@ -47,6 +47,7 @@ class Logger:
 
 class LogManager:
     _configured: bool = False
+    _loggers: t.Dict[str, Logger] = {}
 
     @classmethod
     def configure(cls, config: LoggerConfigStructure) -> None:
@@ -54,16 +55,21 @@ class LogManager:
         cls._configured = True
 
     @classmethod
-    def get_logger(cls, name: str) -> Logger:
+    def get_logger(cls, name: str = "default") -> Logger:
         if not cls._configured:
             LoggerRegistry.get_instance().ensure_default()
             cls._configured = True
-        return Logger(name)
+        if name not in cls._loggers:
+            cls._loggers[name] = Logger(name)
+            if name != "default":
+                LoggerRegistry.get_instance().add_file_sink(name)
+        return cls._loggers[name]
 
     @classmethod
     def reset(cls) -> None:
         LoggerRegistry.reset()
         cls._configured = False
+        cls._loggers.clear()
 
     @classmethod
     def set_level(cls, prefix: str, level: str) -> None:

@@ -16,7 +16,7 @@ import yaml
 from ._enums import LogLevelEnum, EncodingEnum
 
 # File logger default pattern
-_DEFAULT_LOG_PATTERN = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | P:{process} T:{thread} - {message}"
+_DEFAULT_LOG_PATTERN = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{line} | P:{process} T:{thread} - {message}"
 
 
 @dataclass(frozen=True)

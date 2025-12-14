@@ -16,7 +16,6 @@ import yaml
 
 from ._enums import LogLevelEnum, EncodingEnum
 
-# File logger default pattern
 _DEFAULT_LOG_PATTERN = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{line} | P:{process} T:{thread} - {message}"
 
 
@@ -75,9 +74,10 @@ class LoggerConfigStructure:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class LoggerRecordStructure:
     name: str
     level: LogLevelEnum
     message: str
+    depth: int = 5
     extra: t.Optional[t.Dict[str, t.Any]] = None

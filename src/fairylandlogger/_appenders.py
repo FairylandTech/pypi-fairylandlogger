@@ -13,8 +13,8 @@ from pathlib import Path
 
 from loguru import logger as _loguru_logger
 
-from ._enums import LogLevelEnum, EncodingEnum
 from fairylandlogger import __banner__
+from ._enums import LogLevelEnum, EncodingEnum
 
 
 class AbstractLoggerAppender(abc.ABC):

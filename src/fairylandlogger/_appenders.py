@@ -13,6 +13,7 @@ from pathlib import Path
 
 from loguru import logger as _loguru_logger
 
+from fairylandlogger import __banner__
 from ._enums import LogLevelEnum, EncodingEnum
 
 
@@ -26,7 +27,7 @@ class ConsoleLoggerAppender(AbstractLoggerAppender):
     _DEFAULT_PATTERN = (
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
         "<level>{level: <8}</level> | "
-        "<cyan>{extra[name]}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<cyan>{name}</cyan>:<cyan>{line}</cyan> - "
         "<level>{message}</level>"
     )
 
@@ -43,6 +44,7 @@ class ConsoleLoggerAppender(AbstractLoggerAppender):
         self._level = value
 
     def add_sink(self):
+        print(__banner__)
         _loguru_logger.add(
             sink=lambda x: print(x, end=""),
             level=self.level,
@@ -68,7 +70,7 @@ class FileLoggerAppender(AbstractLoggerAppender):
         self.rotation = rotation
         self.retention = retention
         self._encoding = encoding
-        self.pattern = pattern if pattern else self._DEFAULT_PATTERN
+        self.pattern = pattern
 
     @property
     def level(self):

@@ -10,6 +10,7 @@
 import os
 import threading
 import typing as t
+from enum import Enum
 from pathlib import Path
 
 from loguru import logger as _loguru_logger
@@ -22,13 +23,15 @@ from ._structure import LoggerConfigStructure, LoggerRecordStructure
 class LoggerRegistry:
     _instance: t.Optional["LoggerRegistry"] = None
     _lock: threading.RLock = threading.RLock()
+    _LOG_LEVEL_ORDER: t.List[str] = ["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
     def __init__(self):
         self._configured: bool = False
+        self._config: t.Optional[LoggerConfigStructure] = None
         self._appenders: t.List[AbstractLoggerAppender] = []
         self._level: t.Union[str, LogLevelEnum] = LogLevelEnum.INFO
         self._levels: t.Dict[str, t.Union[str, LogLevelEnum]] = {}
-        self._config: t.Optional[LoggerConfigStructure] = None
+        self._logger_file_handlers: t.Dict[str, t.List[int]] = {}  # Track logger-specific file handlers
 
     @property
     def level(self):
@@ -37,6 +40,18 @@ class LoggerRegistry:
     @level.setter
     def level(self, value: t.Union[str, LogLevelEnum]):
         self._level = value
+
+    @property
+    def config(self) -> t.Optional[LoggerConfigStructure]:
+        return self._config
+
+    @property
+    def appenders(self) -> t.List[AbstractLoggerAppender]:
+        return self._appenders.copy()
+
+    @property
+    def is_configured(self) -> bool:
+        return self._configured
 
     @classmethod
     def get_instance(cls) -> "LoggerRegistry":
@@ -62,6 +77,9 @@ class LoggerRegistry:
                 raise error
             self._config = config
             self._appenders.clear()
+            self._logger_file_handlers.clear()
+
+            self._config = config
             self._level = config.level
 
             if config.console:
@@ -70,43 +88,7 @@ class LoggerRegistry:
                 self._appenders.append(console)
 
             if config.file:
-                path = config.dirname
-                os.makedirs(path, exist_ok=True)
-                if isinstance(path, Path):
-                    path = path.joinpath(config.filename)
-                elif isinstance(path, str):
-                    path = os.path.join(path, config.filename)
-                else:
-                    raise TypeError("dirname must be str or Path")
-
-                # Add regular file appender
-                file_appender = FileLoggerAppender(
-                    path=path,
-                    level=self._level,
-                    rotation=config.rotation,
-                    retention=config.retention,
-                    encoding=config.encoding,
-                    pattern=config.pattern,
-                )
-                file_appender.add_sink()
-                self._appenders.append(file_appender)
-
-                if config.json:
-                    json_path = str(path)
-                    if json_path.endswith('.log'):
-                        json_path = json_path[:-4] + "-json" + '.log'
-                    else:
-                        json_path = json_path + '.json'
-
-                    json_appender = JSONLoggerAppender(
-                        path=json_path,
-                        level=self._level,
-                        rotation=config.rotation,
-                        retention=config.retention,
-                        encoding=config.encoding,
-                    )
-                    json_appender.add_sink()
-                    self._appenders.append(json_appender)
+                self._add_file_appenders(config)
 
             self._configured = True
 
@@ -152,7 +134,7 @@ class LoggerRegistry:
         eff_level = eff_level.value if isinstance(eff_level, LogLevelEnum) else eff_level
 
         try:
-            return order.index(msg_level) >= order.index(eff_level)
+            return cls._LOG_LEVEL_ORDER.index(msg_level) >= cls._LOG_LEVEL_ORDER.index(eff_level)
         except ValueError:
             return True
 
@@ -164,22 +146,69 @@ class LoggerRegistry:
 
         return best[1]
 
+    def register_logger_file(self, logger_name: str, dirname: str = "") -> None:
+        if not self._config or not self._config.file or not logger_name:
+            return
+
+        with self._lock:
+            # Skip if already registered
+            if logger_name in self._logger_file_handlers:
+                return
+
+            # Build logger-specific file path
+            if logger_name.endswith(".log"):
+                log_filename = logger_name
+            else:
+                log_filename = f"{logger_name}.log"
+
+            if not dirname:
+                dirname = self._config.dirname
+            else:
+                dirname = os.path.join(self._config.dirname, dirname)
+                os.makedirs(dirname, exist_ok=True)
+
+            log_path = self._get_log_file_path(dirname, log_filename)
+
+            # Add logger-specific file handler
+            handler_id = _loguru_logger.add(
+                sink=log_path,
+                rotation=self._config.rotation,
+                retention=self._config.retention,
+                encoding=self._config.encoding.value if isinstance(self._config.encoding, Enum) else self._config.encoding,
+                level=self._level.value if isinstance(self._level, LogLevelEnum) else self._level,
+                format=self._config.pattern,
+                filter=lambda record: record["extra"].get("logger_name") == logger_name,
+                enqueue=True,
+                backtrace=True,
+                diagnose=True,
+            )
+
+            # Track the handler
+            self._logger_file_handlers[logger_name] = [handler_id]
+
     def route(self, record: LoggerRecordStructure) -> None:
-        depth = 3
         if not self._should_log(record.level, self._effective_level(record.name)):
             return
-        with _loguru_logger.contextualize(name=record.name):
-            if record.level == LogLevelEnum.TRACE:
-                _loguru_logger.opt(depth=depth).trace(record.message)
-            elif record.level == LogLevelEnum.DEBUG:
-                _loguru_logger.opt(depth=depth).debug(record.message)
-            elif record.level == LogLevelEnum.INFO:
-                _loguru_logger.opt(depth=depth).info(record.message)
-            elif record.level == LogLevelEnum.WARNING:
-                _loguru_logger.opt(depth=depth).warning(record.message)
-            elif record.level == LogLevelEnum.ERROR:
-                _loguru_logger.opt(depth=depth).error(record.message)
-            elif record.level == LogLevelEnum.SUCCESS:
-                _loguru_logger.opt(depth=depth).success(record.message)
-            else:
-                _loguru_logger.opt(depth=depth).critical(record.message)
+
+        depth = record.depth
+        msg = f"[{record.name}] {record.message}"
+
+        extra_context = {"logger_name": record.name}
+        self._log_message(record.level, msg, depth, extra_context)
+
+    def _log_message(self, level: LogLevelEnum, msg: str, depth: int, extra: t.Dict[str, t.Any]) -> None:
+        log_method = self._get_log_method(level)
+        log_method(depth, msg, extra)
+
+    def _get_log_method(self, level: LogLevelEnum) -> t.Callable:
+        level_methods = {
+            LogLevelEnum.TRACE: lambda d, m, e: _loguru_logger.opt(depth=d).bind(**e).trace(m),
+            LogLevelEnum.DEBUG: lambda d, m, e: _loguru_logger.opt(depth=d).bind(**e).debug(m),
+            LogLevelEnum.INFO: lambda d, m, e: _loguru_logger.opt(depth=d).bind(**e).info(m),
+            LogLevelEnum.WARNING: lambda d, m, e: _loguru_logger.opt(depth=d).bind(**e).warning(m),
+            LogLevelEnum.ERROR: lambda d, m, e: _loguru_logger.opt(depth=d).bind(**e).error(m),
+            LogLevelEnum.SUCCESS: lambda d, m, e: _loguru_logger.opt(depth=d).bind(**e).success(m),
+            LogLevelEnum.CRITICAL: lambda d, m, e: _loguru_logger.opt(depth=d).bind(**e).critical(m),
+        }
+
+        return level_methods.get(level, level_methods[LogLevelEnum.CRITICAL])

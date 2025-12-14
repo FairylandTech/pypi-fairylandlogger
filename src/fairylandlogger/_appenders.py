@@ -54,7 +54,6 @@ class ConsoleLoggerAppender(AbstractLoggerAppender):
 
 
 class FileLoggerAppender(AbstractLoggerAppender):
-    _DEFAULT_PATTERN = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {extra[name]}:{function}:{line} | P:{process} T:{thread} - {message}"
 
     def __init__(
             self,
@@ -88,7 +87,7 @@ class FileLoggerAppender(AbstractLoggerAppender):
     def encoding(self, value: t.Union[str, EncodingEnum]):
         self._encoding = value
 
-    def add_sink(self, filter: t.Optional[t.Callable] = None):
+    def add_sink(self):
         _loguru_logger.add(
             sink=self.path,
             rotation=self.rotation,
@@ -99,7 +98,6 @@ class FileLoggerAppender(AbstractLoggerAppender):
             enqueue=True,
             backtrace=True,
             diagnose=True,
-            filter=filter,
         )
 
 

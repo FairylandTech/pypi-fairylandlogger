@@ -11,6 +11,7 @@ import os
 import typing as t
 from dataclasses import dataclass
 from pathlib import Path
+
 import yaml
 
 from ._enums import LogLevelEnum, EncodingEnum
@@ -25,7 +26,7 @@ class LoggerConfigStructure:
     console: bool = True
     file: bool = False
     dirname: t.Optional[t.Union[str, Path]] = "logs"
-    filename: str = "service.log"
+    filename: str = "fairyland-logger.log"
     rotation: str = "5 MB"
     retention: str = "180 days"
     pattern: str = _DEFAULT_LOG_PATTERN
@@ -45,7 +46,7 @@ class LoggerConfigStructure:
             console=get_bool("ENABLE_CONSOLE", True),
             file=get_bool("ENABLE_FILE", False),
             dirname=os.getenv(f"{frefix}DIR", "logs"),
-            filename=os.getenv(f"{frefix}FILE", "service.log"),
+            filename=os.getenv(f"{frefix}FILE", "fairyland-logger.log"),
             rotation=os.getenv(f"{frefix}ROTATION", "5 MB"),
             retention=os.getenv(f"{frefix}RETENTION", "180 days"),
             pattern=os.getenv(f"{frefix}PATTERN", _DEFAULT_LOG_PATTERN),
@@ -65,7 +66,7 @@ class LoggerConfigStructure:
             console=bool(data.get("console", True)),
             file=bool(data.get("file", False)),
             dirname=data.get("dirname", "logs"),
-            filename=data.get("filename", "service.log"),
+            filename=data.get("filename", "fairyland-logger.log"),
             rotation=data.get("rotation", "5 MB"),
             retention=data.get("retention", "180 days"),
             pattern=data.get("pattern", _DEFAULT_LOG_PATTERN),

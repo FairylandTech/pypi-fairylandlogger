@@ -77,7 +77,6 @@ class LoggerRegistry:
                 else:
                     raise TypeError("dirname must be str or Path")
 
-                # Add regular file appender
                 file_appender = FileLoggerAppender(
                     path=path,
                     level=self._level,

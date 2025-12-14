@@ -10,7 +10,7 @@
 import os
 import unittest
 
-from fairylandlogger import LogManager, LoggerConfigStructure, __banner__
+from fairylandlogger import LogManager, LoggerConfigStructure
 
 
 class TestFairylandLogger(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestFairylandLogger(unittest.TestCase):
         print(config)
 
         LogManager.configure(config)
-        logger = LogManager.get_logger(__name__)
+        logger = LogManager.get_logger(__name__)  # test.test_logger
         print(LogManager.get_registry())
 
         class A:

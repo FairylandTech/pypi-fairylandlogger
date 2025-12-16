@@ -11,7 +11,7 @@ import abc
 import typing as t
 from pathlib import Path
 
-from loguru import logger as _loguru_logger, Record
+from loguru import logger as _loguru_logger
 
 from fairylandlogger import __banner__
 from ._enums import LogLevelEnum, EncodingEnum
@@ -46,7 +46,7 @@ class ConsoleLoggerAppender(AbstractLoggerAppender):
     def add_sink(self):
         print(__banner__)
 
-        def formatter(record: Record):
+        def formatter(record):
             if record["name"] == "__main__" and record["file"]:
                 record["name"] = Path(record["file"].name).stem
             fmt = self.pattern

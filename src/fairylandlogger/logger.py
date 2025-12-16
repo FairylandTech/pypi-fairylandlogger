@@ -70,6 +70,13 @@ class LogManager:
         cls._configured = True
 
     @classmethod
+    def get_config(cls) -> LoggerConfigStructure:
+        registry = LoggerRegistry.get_instance()
+        if registry.config is None:
+            raise RuntimeError("LoggerRegistry is not configured yet.")
+        return registry.config
+
+    @classmethod
     def get_logger(cls, name: str = "", dirname: str = "") -> Logger:
         if not cls._configured:
             LoggerRegistry.get_instance().ensure_default()

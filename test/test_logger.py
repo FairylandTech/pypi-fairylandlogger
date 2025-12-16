@@ -9,36 +9,24 @@
 
 import os
 import unittest
+from pathlib import Path
 
-from fairylandlogger import LogManager, LoggerConfigStructure
+from fairylandlogger import LogManager
 
 
 class TestFairylandLogger(unittest.TestCase):
 
     def setUp(self):
-        """Reset the LogManager before each test."""
         LogManager.reset()
+
         # print(__banner__)
 
     def tearDown(self):
-        """Reset the LogManager after each test to ensure clean state."""
         LogManager.reset()
 
-    def test_logog(self):
-        # config = LoggerConfigStructure(
-        #     level=LogLevelEnum.DEBUG,
-        #     file=True,
-        #     json=False,
-        # )
+    def test_logger(self):
         print(os.getcwd())
-
-        config = LoggerConfigStructure.from_yaml("application.yaml")
-
-        print(config)
-
-        LogManager.configure(config)
         logger = LogManager.get_logger(__name__)  # test.test_logger
-        print(LogManager.get_registry())
 
         class A:
 

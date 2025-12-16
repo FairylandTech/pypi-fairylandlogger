@@ -33,6 +33,13 @@ class LoggerRegistry:
         self._levels: t.Dict[str, t.Union[str, LogLevelEnum]] = {}
         self._logger_file_handlers: t.Dict[str, t.List[int]] = {}  # Track logger-specific file handlers
 
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
     @property
     def level(self):
         return self._level
@@ -145,7 +152,26 @@ class LoggerRegistry:
 
     def ensure_default(self):
         if not self._configured:
-            self.configure(LoggerConfigStructure())
+            config = self._auto_load_config()
+            self.configure(config)
+
+    def _auto_load_config(self) -> LoggerConfigStructure:
+        config_path = self._find_config_file()
+        if not config_path:
+            return LoggerConfigStructure()
+
+        return LoggerConfigStructure.from_yaml(config_path)
+
+    def _find_config_file(self) -> t.Optional[Path]:
+        possible_files = ["fairyland-logger.yaml", "fairyland.yaml", "application.yaml", "logging.yaml"]
+        root_path = Path.cwd()
+
+        for file_name in possible_files:
+            config_file = root_path.joinpath(file_name)
+            if config_file.is_file():
+                return config_file
+
+        return None
 
     @classmethod
     def _should_log(cls, msg_level: t.Union[str, LogLevelEnum], eff_level: t.Union[str, LogLevelEnum]) -> bool:
@@ -214,7 +240,7 @@ class LoggerRegistry:
             return
 
         depth = record.depth
-        msg = f"[{record.name}] {record.message}"
+        msg = f"[{record.name}] {record.message}" if record.name else record.message
 
         extra_context = {"logger_name": record.name}
         self._log_message(record.level, msg, depth, extra_context)

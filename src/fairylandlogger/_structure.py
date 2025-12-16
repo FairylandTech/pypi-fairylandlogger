@@ -21,7 +21,7 @@ _DEFAULT_LOG_PATTERN = "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{l
 
 @dataclass(frozen=True)
 class LoggerConfigStructure:
-    level: LogLevelEnum = LogLevelEnum.INFO
+    level: LogLevelEnum = LogLevelEnum.TRACE
     console: bool = True
     file: bool = False
     dirname: t.Optional[t.Union[str, Path]] = "logs"

@@ -1,6 +1,6 @@
 [project]
 name = "pypi-fairylandlogger"
-version = "1.0.0"
+version = "1.0.1"
 description = "A comprehensive Python package for FairylandLogger project"
 readme = "README.md"
 requires-python = ">=3.12"

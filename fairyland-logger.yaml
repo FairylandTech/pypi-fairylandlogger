@@ -9,8 +9,8 @@ fairyland:
   logger:
     level: DEBUG
     console: true
-    file: false
+    file: true
     dirname: logs
     rotation: 10 MB
     retention: 180 days
-    json: false
+    json: true

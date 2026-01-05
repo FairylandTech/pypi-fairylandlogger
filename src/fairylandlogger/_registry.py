@@ -239,7 +239,7 @@ class LoggerRegistry:
         if not self._should_log(record.level, self._effective_level(record.name)):
             return
 
-        depth = record.depth
+        depth = record.depth + 5
         msg = f"[{record.name}] {record.message}" if record.name else record.message
 
         extra_context = {"logger_name": record.name}

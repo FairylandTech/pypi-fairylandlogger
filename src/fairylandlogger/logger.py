@@ -14,9 +14,10 @@ from ._enums import LogLevelEnum
 
 class Logger:
 
-    def __init__(self, name: str, dirname: str = ""):
+    def __init__(self, name: str, dirname: str = "", depth: int | None = None):
         self._name = name
         self._dirname = dirname
+        self._depth = depth
         self._registry = LoggerRegistry.get_instance()
 
         if name:
@@ -30,35 +31,39 @@ class Logger:
     def dirname(self):
         return self._dirname
 
-    def _emit(self, level: LogLevelEnum, msg: str, **kwargs) -> None:
+    def _emit(self, level: LogLevelEnum, msg: str, depth: int, **kwargs) -> None:
+        if self._depth is not None:
+            depth += self._depth
+
         record = LoggerRecordStructure(
             name=self._name,
             level=level.upper(),
             message=msg,
+            depth=depth,
             extra=kwargs or {}
         )
         self._registry.route(record)
 
-    def trace(self, msg: str, **kwargs) -> None:
-        self._emit(LogLevelEnum.TRACE, msg, **kwargs)
+    def trace(self, msg: str, depth: int = 0, **kwargs) -> None:
+        self._emit(LogLevelEnum.TRACE, msg, depth, **kwargs)
 
-    def debug(self, msg: str, **kwargs) -> None:
-        self._emit(LogLevelEnum.DEBUG, msg, **kwargs)
+    def debug(self, msg: str, depth: int = 0, **kwargs) -> None:
+        self._emit(LogLevelEnum.DEBUG, msg, depth, **kwargs)
 
-    def info(self, msg: str, **kwargs) -> None:
-        self._emit(LogLevelEnum.INFO, msg, **kwargs)
+    def info(self, msg: str, depth: int = 0, **kwargs) -> None:
+        self._emit(LogLevelEnum.INFO, msg, depth, **kwargs)
 
-    def success(self, msg: str, **kwargs) -> None:
-        self._emit(LogLevelEnum.SUCCESS, msg, **kwargs)
+    def success(self, msg: str, depth: int = 0, **kwargs) -> None:
+        self._emit(LogLevelEnum.SUCCESS, msg, depth, **kwargs)
 
-    def warning(self, msg: str, **kwargs) -> None:
-        self._emit(LogLevelEnum.WARNING, msg, **kwargs)
+    def warning(self, msg: str, depth: int = 0, **kwargs) -> None:
+        self._emit(LogLevelEnum.WARNING, msg, depth, **kwargs)
 
-    def error(self, msg: str, **kwargs) -> None:
-        self._emit(LogLevelEnum.ERROR, msg, **kwargs)
+    def error(self, msg: str, depth: int = 0, **kwargs) -> None:
+        self._emit(LogLevelEnum.ERROR, msg, depth, **kwargs)
 
-    def critical(self, msg: str, **kwargs) -> None:
-        self._emit(LogLevelEnum.CRITICAL, msg, **kwargs)
+    def critical(self, msg: str, depth: int = 0, **kwargs) -> None:
+        self._emit(LogLevelEnum.CRITICAL, msg, depth, **kwargs)
 
 
 class LogManager:
@@ -77,11 +82,11 @@ class LogManager:
         return registry.config
 
     @classmethod
-    def get_logger(cls, name: str = "", dirname: str = "") -> Logger:
+    def get_logger(cls, name: str = "", /, *, dirname: str = "", depth: int = 0) -> Logger:
         if not cls._configured:
             LoggerRegistry.get_instance().ensure_default()
             cls._configured = True
-        return Logger(name, dirname)
+        return Logger(name, dirname, depth)
 
     @classmethod
     def reset(cls) -> None:

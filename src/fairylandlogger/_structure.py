@@ -79,5 +79,5 @@ class LoggerRecordStructure:
     name: str
     level: LogLevelEnum
     message: str
-    depth: int = 5
+    depth: int
     extra: t.Optional[t.Dict[str, t.Any]] = None

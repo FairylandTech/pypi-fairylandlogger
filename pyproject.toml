@@ -1,6 +1,6 @@
 [project]
 name = "pypi-fairylandlogger"
-version = "1.0.2"
+version = "1.0.3"
 description = "A comprehensive Python package for FairylandLogger project"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -22,7 +22,9 @@ dependencies = [
     "pyyaml",
 ]
 
+# Development Dependencies : uv sync --all-extras
 [project.optional-dependencies]
+# uv sync --extra dev
 dev = [
     "build", # For building the package (sdist and wheel)
     "twine", # For uploading the package to PyPI

@@ -37,7 +37,7 @@ class TestFairylandLogger(unittest.TestCase):
 
         logger1 = LogManager.get_logger()
 
-        logger.info("Info message")
+        logger.info("Info message", depth=1)
         logger.debug("Debug message")
         logger.error("Error message")
         logger.warning("Warning message")
